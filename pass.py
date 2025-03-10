@@ -10,19 +10,18 @@ st.markdown("### Check your password strength and see how long it takes to crack
 
 password = st.text_input("Enter your password", type="password")
 
+feedback = []  # List to store suggestions
+
 # Function to estimate password crack time
 def estimate_crack_time(password, score):
     charset = 0
-    if re.search(r'[a-z]', password): charset += 26 #small letters hain to 26 add hojayega charset mai
+    if re.search(r'[a-z]', password): charset += 26
     if re.search(r'[A-Z]', password): charset += 26
     if re.search(r'\d', password): charset += 10
     if re.search(r'[^\w\s]', password): charset += 32  # Special characters
 
-#Total number of possible combinations for the given password.
     guesses = charset ** len(password)
     attempts_per_sec = 1e9  # ~1 billion guesses per second
-
-    #Calculates the estimated crack time in seconds.
     time_sec = guesses / attempts_per_sec
 
     if score == 4:  
@@ -38,21 +37,32 @@ def estimate_crack_time(password, score):
 
 # Function to generate a strong password
 def generate_strong_password():
-    chars = string.ascii_letters + string.digits + "!@#$%^&*" #Creates a list of letters (A-Z, a-z), numbers (0-9), and special characters.
-
-    #''. join Combines the selected characters into a single password string.
-
-    return ''.join(random.choice(chars) for _ in range(12)) #Picks 12 random characters from the list.
-
+    chars = string.ascii_letters + string.digits + "!@#$%^&*"
+    return ''.join(random.choice(chars) for _ in range(12))
 
 # Password Strength Checking
 if password:
-    score = sum([
-        len(password) >= 8,
-        bool(re.search(r'[A-Z]', password) and re.search(r'[a-z]', password)),
-        bool(re.search(r'\d', password)),
-        bool(re.search(r'[^\w\s]', password))
-    ])
+    score = 0
+
+    if len(password) >= 8:
+        score += 1
+    else:
+        feedback.append("❌ Password should be at least **8 characters** long.")
+
+    if re.search(r'[A-Z]', password) and re.search(r'[a-z]', password):
+        score += 1
+    else:
+        feedback.append("🔤 Password should contain **both upper and lower case letters**.")
+
+    if re.search(r'\d', password):
+        score += 1
+    else:
+        feedback.append("🔢 Password should contain **at least one digit**.")
+
+    if re.search(r'[^\w\s]', password):  
+        score += 1
+    else:
+        feedback.append("🔣 Password should contain **at least one special character** (e.g., !@#$%^&*).")
 
     # Strength Bar
     st.progress(score / 4)
@@ -65,8 +75,14 @@ if password:
     else:
         st.error("❌ Your password is **weak**. Change it now!")
 
-    # Crack Time Estimation (Only "Nearly unbreakable" for strong passwords)
+    # Crack Time Estimation
     st.markdown(f"**⏳ Estimated Crack Time:** {estimate_crack_time(password, score)}")
+
+    # Display Improvement Suggestions
+    if feedback:
+        st.markdown("### 🛠️ Improvement Suggestions")
+        for tip in feedback:
+            st.write(tip)
 
     # Strong Password Suggestion
     if score < 3:
